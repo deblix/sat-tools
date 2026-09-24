@@ -1,0 +1,123 @@
+#!/bin/bash
+# sat-pair-check — verifica que un .cer y un .key del SAT formen par.
+# Copyright (C) 2026 Mario Oyorzabal Salgado <soporte@deblix.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Este programa es software libre: puedes redistribuirlo y/o modificarlo
+# bajo los términos de la GNU General Public License, versión 3 o posterior,
+# publicada por la Free Software Foundation.
+#
+# Este programa se distribuye con la esperanza de que sea útil, pero SIN
+# NINGUNA GARANTÍA; ni siquiera la garantía implícita de COMERCIABILIDAD
+# o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Ver la GNU General Public
+# License para más detalles.
+#
+# Deberías haber recibido una copia de la GNU General Public License
+# junto con este programa. Si no, consulta <https://www.gnu.org/licenses/>.
+
+VERSION="0.1"
+
+help=0
+version=0
+quiet=0
+
+if ! command -v openssl &> /dev/null; then
+    echo "Error: No encuentro el comando openssl." >&2
+    exit 3
+fi
+
+usage() {
+  cat <<EOF
+Uso: SAT_KEY_PASSWORD="***" $0 -c CERT -k KEY [-q]
+     $0 {-h | -V}
+
+Opciones:
+  -c, --cert     (CSD) Certificado (requerido)
+  -k, --key      (CSD) Clave privada (requerido)
+  -q, --quiet    Sin salida, solo exit code
+
+Información:
+  -h, --help     Muestra esta ayuda
+  -V, --version  Muestra la versión
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "${1}" in
+        -c|--cert)
+            cert="${2}"
+            shift 2
+            ;;
+        -k|--key)
+            key="${2}"
+            shift 2
+            ;;
+        -q|--quiet)
+            quiet=1
+            shift
+            ;;
+        -h|--help)
+            help=1
+            break
+            ;;
+        -V|--version)
+            version=1
+            break
+            ;;
+        *)
+            echo "Opción desconocida: ${1}" >&2
+            usage >&2
+            exit 3
+            ;;
+    esac
+done
+
+if [[ "${help}" -eq 1 ]]; then
+    usage
+    exit 2
+fi
+
+if [[ "${version}" -eq 1 ]]; then
+    echo "${0} version ${VERSION}"
+    exit 2
+fi
+
+if [[ -z "${SAT_KEY_PASSWORD}" || -z "${key}" || -z "${cert}" ]]; then
+    usage >&2
+    exit 3
+fi
+
+if [[ ! -f "${key}" ]]; then
+    echo "Error: No encuentro el archivo ${key}." >&2
+    exit 3
+fi
+
+if ! openssl rsa -check -noout -in "${key}" -passin env:SAT_KEY_PASSWORD &> /dev/null; then
+    echo "Error: La llave ${key} no es válida, password incorrecto o faltante." >&2
+    exit 3
+fi
+
+if [[ ! -f "${cert}" ]]; then
+    echo "Error: No encuentro el archivo ${cert}." >&2
+    exit 3
+fi
+
+if ! openssl x509 -noout -in "${cert}" &> /dev/null; then
+    echo "Error: El archivo ${cert} no es un certificado válido." >&2
+    exit 3
+fi
+
+modulus_key=$(openssl rsa -noout -modulus -in "${key}" -passin env:SAT_KEY_PASSWORD)
+modulus_key="${modulus_key/Modulus=/}"
+
+modulus_cert=$(openssl x509 -noout -modulus -in "${cert}")
+modulus_cert="${modulus_cert/Modulus=/}"
+
+if [[ "${modulus_key}" == "${modulus_cert}" ]]; then
+    [[ "${quiet}" -eq 1 ]] || echo "Coinciden"
+    exit 0
+else
+    [[ "${quiet}" -eq 1 ]] || echo "No coinciden"
+    exit 1
+fi
