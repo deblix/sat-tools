@@ -40,7 +40,7 @@ sat-pair-check --help
 Verifica si un certificado `.cer` y una llave `.key` del SAT forman par.
 
 ```bash
-sat-pair-check --cert ARCHIVO.cer --key ARCHIVO.key
+SAT_KEY_PASSWORD='mi_contraseña' sat-pair-check --cert sello.cer --key sello.key
 ```
 
 Opciones:
@@ -61,12 +61,6 @@ toma de la variable de entorno `SAT_KEY_PASSWORD`.
 Por seguridad, **no se acepta la contraseña como argumento en la línea
 de comandos**, porque quedaría registrada en el historial del shell y
 en la lista de procesos.
-
-Ejemplo:
-
-```bash
-SAT_KEY_PASSWORD='mi_contraseña' sat-pair-check --cert sello.cer --key sello.key
-```
 
 #### Códigos de salida
 
