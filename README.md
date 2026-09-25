@@ -1,7 +1,7 @@
 # sat-tools
 
 Colección de herramientas de línea de comandos para trabajar con
-certificados y llaves del SAT (e.firma y sello digital).
+certificados (e.firma, sello digital) y servicios del SAT.
 
 > **Aviso:** Este proyecto no es oficial del SAT ni está afiliado,
 > respaldado o patrocinado por el Servicio de Administración Tributaria.
